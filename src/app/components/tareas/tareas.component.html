@@ -1,0 +1,180 @@
+<div class="tareas-container">
+    <!-- Sidebar de grupos (izquierda) -->
+    <aside class="sidebar">
+        <h2 class="sidebar__title">Grupos</h2>
+        <ul class="sidebar__list">
+            <li (click)="selectGroup('General')" [class.sidebar__item--active]="selectedGroup === 'General'"
+                class="sidebar__item">
+                General
+            </li>
+            <li *ngFor="let g of groups" (click)="selectGroup(g)" [class.sidebar__item--active]="selectedGroup === g"
+                class="sidebar__item">
+                {{ g }}
+            </li>
+        </ul>
+
+        <!-- Crear nuevo grupo -->
+        <div class="sidebar__new-group">
+            <input [(ngModel)]="newGroupName" type="text" placeholder="Nuevo grupo" class="sidebar__input" />
+            <button (click)="agregarGrupo()" class="sidebar__btn">Agregar</button>
+        </div>
+
+        <!-- Toggle tema oscuro/claro -->
+        <div class="sidebar__theme-toggle">
+            <label>
+                <input type="checkbox" [checked]="isDarkMode" (change)="toggleTheme()" />
+                <span class="sidebar__theme-label">{{ isDarkMode ? 'Modo Oscuro' : 'Modo Claro' }}</span>
+            </label>
+        </div>
+
+        <!-- Botón cerrar Sesión -->
+        <button (click)="cerrarSesion()" class="sidebar__logout">Cerrar Sesión</button>
+    </aside>
+
+    <!-- Contenido principal (derecha) -->
+    <main class="main-content">
+        <h1 class="main-content__title">Mis Tareas<span class="main-content__subtitle">({{ selectedGroup }})</span></h1>
+
+        <!-- Formulario para crear nueva tarea -->
+        <section class="task-form">
+            <h2 class="task-form__heading">Crear Nueva Tarea</h2>
+            <form class="task-form__form" (submit)="onSubmitNuevaTarea(); $event.preventDefault()">
+                <div class="task-form__row">
+                    <!-- Título -->
+                    <div class="task-form__field">
+                        <label class="task-form__label">Título<span class="task-form__required">*</span></label>
+                        <input [(ngModel)]="nuevoTitulo" name="titulo" type="text" class="task-form__input"
+                            placeholder="Ej. Comprar víveres" />
+                    </div>
+
+                    <!-- Prioridad -->
+                    <div class="task-form__field">
+                        <label class="task-form__label">Prioridad</label>
+                        <select [(ngModel)]="nuevoPrioridad" name="prioridad" class="task-form__select">
+                            <option value="ALTA">Alta</option>
+                            <option value="MEDIA">Media</option>
+                            <option value="BAJA">Baja</option>
+                        </select>
+                    </div>
+
+                    <!-- Grupo -->
+                    <div class="task-form__field">
+                        <label class="task-form__label">Grupo</label>
+                        <select [(ngModel)]="nuevoGrupo" name="grupo" class="task-form__select">
+                            <option value="General">General</option>
+                            <option *ngFor="let g of groups" [value]="g">{{ g }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="task-form__field task-form__field--wide">
+                        <label class="task-form__label">Descripción</label>
+                        <input [(ngModel)]="nuevoDescripcion" name="descripcion" type="text" class="task-form__input"
+                            placeholder="Detalles (opcional)" />
+                    </div>
+                </div>
+
+                <button type="submit" class="task-form__submit">Agregar Tarea</button>
+            </form>
+        </section>
+
+        <!-- Controles/Filtros -->
+        <section class="filters">
+            <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar por título..." class="filters__input" />
+
+            <select [(ngModel)]="priorityFilter" class="filters__select">
+                <option value="TODAS">Todas prioridades</option>
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+            </select>
+
+            <select [(ngModel)]="sortOption" class="filters__select">
+                <option value="fecha">Por fecha (antiguas→nuevas)</option>
+                <option value="titulo">Por título (A→Z)</option>
+                <option value="prioridad">Por prioridad (ALTA→BAJA)</option>
+            </select>
+
+            <button *ngIf="sortOption === 'titulo'" (click)="toggleSortOrder()" class="filters__btn">{{ sortAsc ? 'A→Z'
+                : 'Z→A' }}</button>
+
+            <!-- Filtro “Mostrar solo favoritas” -->
+            <label style="display: flex; align-items: center; font-size: 0.875rem;">
+                <input type="checkbox" [(ngModel)]="filterFavoritos" name="filterFavoritos"style="margin-right: 0.5rem;" />
+                Mostrar solo favoritas
+            </label>
+        </section>
+
+        <!-- Lista de tareas -->
+        <section class="task-list">
+            <div *ngIf="cargando" class="task-list__loading">
+                Cargando tareas...
+            </div>
+
+            <div class="task-list__grid" *ngIf="!cargando">
+                <ng-container *ngFor="let t of tasksForCurrentView()">
+                    <!-- Modo solo lectura -->
+                    <div *ngIf="editingTaskId !== t.id" class="task-card" (click)="confirmFinalizar(t)" [ngClass]="{
+                    'task-card--alta': t.prioridad === 'ALTA',
+                    'task-card--media': t.prioridad === 'MEDIA',
+                    'task-card--baja': t.prioridad === 'BAJA'
+                    }">
+                        <div class="task-card__content" style="display: flex; align-items: center;">
+                            <!-- Icono de estrella para favorito -->
+                            <span (click)="toggleFavorite(t); $event.stopPropagation()"
+                                style="cursor: pointer; font-size: 1.25rem; margin-right: 0.5rem;"
+                                [style.color]="t.favorito ? '#f59e0b' : '#9ca3af'"
+                                title="{{ t.favorito ? 'Quitar de favoritas' : 'Marcar como favorita' }}">
+                                {{ t.favorito ? '★' : '☆' }}
+                            </span>
+
+                            <div style="flex: 1;">
+                                <h3 class="task-card__title">{{ t.titulo }}</h3>
+                                <p class="task-card__date">Creada: {{ getRelativeTime(t.fecha_creacionRaw, currentTime) }}</p>
+                                <p class="task-card__desc">{{ t.descripcion }}</p>
+                            </div>
+                        </div>
+                        <div class="task-card__footer">
+                            <span class="task-card__group">Grupo: {{ t.grupo || 'General' }}</span>
+                            <!-- Botón “Editar” (no dispara finalizar) -->
+                            <button (click)="startEdit(t); $event.stopPropagation()" class="task-card__edit-btn">Editar</button>
+                        </div>
+                    </div>
+
+                    <!-- Modo edición -->
+                    <div *ngIf="editingTaskId === t.id" class="task-card task-card--edit">
+                        <div class="task-card__content">
+                            <label class="task-card__label">Título</label>
+                            <input [(ngModel)]="editCache[t.id].titulo" class="task-card__input" type="text"/>
+
+                            <label class="task-card__label">Prioridad</label>
+                            <select [(ngModel)]="editCache[t.id].prioridad" class="task-card__select">
+                                <option value="ALTA">Alta</option>
+                                <option value="MEDIA">Media</option>
+                                <option value="BAJA">Baja</option>
+                            </select>
+
+                            <label class="task-card__label">Descripción</label>
+                            <input [(ngModel)]="editCache[t.id].descripcion" class="task-card__input" type="text"/>
+
+                            <label class="task-card__label">Grupo</label>
+                            <select [(ngModel)]="editCache[t.id].grupo" class="task-card__select">
+                                <!-- Permitimos “General” o cualquiera existente -->
+                                <option value="General">General</option>
+                                <option *ngFor="let g of groups" [value]="g">{{ g }}</option>
+                            </select>
+                        </div>
+                        <div class="task-card__footer task-card__footer--edit">
+                            <button (click)="saveEdit(t)" class="task-card__save-btn">Guardar</button>
+                            <button (click)="cancelEdit()" class="task-card__cancel-btn">Cancelar</button>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <div *ngIf="tasksForCurrentView().length === 0" class="task-list__empty">
+                    No hay tareas para mostrar.
+                </div>
+            </div>
+        </section>
+    </main>
+</div>

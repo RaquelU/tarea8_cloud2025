@@ -1,0 +1,55 @@
+<div class="max-w-md mx-auto mt-10 p-6 border rounded shadow">
+  <h2 class="text-2xl font-bold mb-4 text-center">Registro</h2>
+
+  <form (submit)="onSubmit(nombreInput, emailInput, fechaInput, contraseniaInput, generoInput); $event.preventDefault()">
+    <!-- Nombre -->
+    <div class="mb-4">
+      <label class="block mb-1 font-semibold">Nombre<span class="text-red-500">*</span></label>
+      <input #nombreInput type="text" class="w-full border rounded px-3 py-2" placeholder="Tu nombre"/>
+    </div>
+
+    <!-- Email -->
+    <div class="mb-4">
+      <label class="block mb-1 font-semibold">Email<span class="text-red-500">*</span></label>
+      <input #emailInput type="email" class="w-full border rounded px-3 py-2" placeholder="correo@dominio.com"/>
+    </div>
+
+    <!-- Fecha de Nacimiento -->
+    <div class="mb-4">
+      <label class="block mb-1 font-semibold">Fecha de Nacimiento<span class="text-red-500">*</span></label>
+      <input #fechaInput type="date" class="w-full border rounded px-3 py-2"/>
+    </div>
+
+    <!-- Contraseña -->
+    <div class="mb-4">
+      <label class="block mb-1 font-semibold">Contraseña<span class="text-red-500">*</span></label>
+      <input #contraseniaInput type="password" class="w-full border rounded px-3 py-2" placeholder="Mínimo 6 caracteres"/>
+    </div>
+
+    <!-- Género -->
+    <div class="mb-4">
+      <label class="block mb-1 font-semibold">Género</label>
+      <select #generoInput class="w-full border rounded px-3 py-2">
+        <option value="">— Selecciona —</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Femenino">Femenino</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div *ngIf="errorMsg" class="text-red-600 text-sm mb-4">
+      {{ errorMsg }}
+    </div>
+
+    <!-- Botón Registrar -->
+    <button type="submit" class="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded hover:bg-blue-700" [disabled]="cargando">
+      <ng-container *ngIf="cargando; else noCargando">
+        Registrando...
+      </ng-container>
+      <ng-template #noCargando>Registrar</ng-template>
+    </button>
+  </form>
+
+  <p class="mt-4 text-center text-sm">¿Ya tienes cuenta?<a routerLink="/login" class="text-blue-600 hover:underline">Inicia sesión</a></p>
+</div>

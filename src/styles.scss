@@ -1,0 +1,21 @@
+/* You can add global styles to this file, and also import other style files */
+
+// Variables CSS: valores por defecto (modo claro)
+:root {
+  --bg-page:        #f9fafb;
+  --bg-sidebar:     #ffffff;
+  --bg-card:        #ffffff;
+  --text-primary:   #111827;
+  --text-secondary: #6b7280;
+  --border-color:   #e5e7eb;
+}
+
+// Cuando <body> tenga la clase .dark, sobreescribimos
+body.dark {
+  --bg-page:        #1f2937;
+  --bg-sidebar:     #111827;
+  --bg-card:        #374151;
+  --text-primary:   #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color:   #4b5563;
+}
